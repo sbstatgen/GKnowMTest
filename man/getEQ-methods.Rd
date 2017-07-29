@@ -1,0 +1,32 @@
+\name{getEQ-methods}
+\docType{methods}
+\alias{getEQ-methods}
+\alias{getEQ,annotatedSNPset-method}
+\alias{getEQ}
+
+\title{\code{getEQ}}
+\description{
+ To extract \code{snp.eq} slot of \code{\link{annotatedSNPset-class}}object.
+}
+\section{Methods}{
+\describe{
+
+\item{\code{signature(x = "annotatedSNPset")}}{
+getEQ(x). x must be an object of \code{\link{annotatedSNPset-class}}
+}
+}}
+
+\seealso{
+\code{\link{anno.create}},\code{\link{annotatedSNPset}}
+}
+
+\examples{
+ 
+  obfile <- system.file("sampleData", "obData.rda", package="GKnowMTest")
+  load(obfile) # loads a mapping object ob1 
+  res=getEQ(ob1)
+  head(res,20)
+  
+}
+\keyword{methods}
+

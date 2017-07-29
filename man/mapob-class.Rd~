@@ -1,0 +1,63 @@
+\name{mapob-class}
+\docType{class}
+\alias{mapob-class}
+\alias{mapob}
+
+
+
+\title{mapob objects}
+\description{
+This class is for data objects of wpval class
+}
+
+\section{Constructor}{
+  \describe{
+    \item{}{
+      \code{wpval(snp.wpval,path.mat)}:
+      Creates an object of wpval class.
+      \describe{
+        \item{\code{snp.df}}{
+          A data.frame with input rsIDs as rownames and both choromosome no and base pair position as collumns.
+        }
+        \item{\code{snp.eq}}{
+         This is a numeric vector indicating which snp mapped to which pathway equivalence class.
+        }
+        \item{\code{eq.mat}}{
+         A list of binary matrix or matrices.Dimension of i^{th} matrix is length of snp.eq by length of pathlist or no of annotations of i^{th} object
+        }
+        \item{\code{eq.map}}{
+         Either NULL  or R Matrix. It is NULL for a single mapob-class object. If more than one mapob-class objects merged as a single object then this field holds a map matrix. No.of column of map matrix is the no. of objects to merge and the no.of rows is the total no of new equivalence classes.
+        }
+        \item{\code{dim}}{
+         A R list of length three.First element is a numeric vector of dimensions of various elments of mapping Object. Other two elements are either NULL(for single object) or two numeric vectors of length equals to the no of objects used for merged.
+        }  
+      }
+    }
+  }
+}
+
+
+\section{Accessors}{
+In the code snippets below, \code{x} is a mapob object.
+\describe{
+\item{}{
+\code{getEQ(x)}: To extract 'snp.eq' field}
+\item{}{
+\code{getDF(x)}:To extract 'snp.df' field }
+}
+\item{}{
+\code{getDIM(x)}:To extract first element 'dim' fileld}
+}
+\item{}{
+\code{getMAT(x)}:To extract equivalence class by annotation matrix}
+}
+}
+
+
+
+
+
+
+
+
+

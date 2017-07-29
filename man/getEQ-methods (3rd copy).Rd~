@@ -1,0 +1,27 @@
+\name{getEQ-methods}
+\docType{methods}
+\alias{getEQ-methods}
+\alias{getEQ,annotatedSNPset-method}
+\title{\code{getEQ}}
+\description{
+ To extract "snp.eq" slot of an object of "annotatedSNPset" class
+}
+\section{Methods}{
+\describe{
+
+\item{\code{signature(x = "annotatedSNPset")}}{
+getEQ(x). x must be an object of "annotatedSNPset" class
+}
+}}
+
+\examples{
+  snpfile <- system.file("sampleData", "snpData.rda", package="mypkg2")
+  pathfile <- system.file("sampleData", "pathData.rda", package="mypkg2")
+  load(snpfile) ## loads snpdf
+  load(pathfile) ## loads pathlist
+  mpob<-create.mapob(rownames(snpdf),pathlist) ## R list of gene symbols as pathlist
+  res=getEQ(mpob)
+  head(res,20)
+}
+\keyword{methods}
+

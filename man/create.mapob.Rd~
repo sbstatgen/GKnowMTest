@@ -1,0 +1,67 @@
+\name{create.mapob}
+\alias{create.mapob}
+
+\title{Method to create a mapping object
+}
+
+\description{
+This method creates a mapping object by mapping input SNPs to the appropriate input pathways. 
+}
+
+\usage{
+create.mapob(ipdata, pathlist, u.span=250,d.span=100)
+}
+
+\arguments{
+  \item{ipdata}{
+A character vector of rsIDs or a data.frame with rsIDs as rownames.
+}
+  \item{pathlist}{
+The input pathway list. This either be a R list with gene symbols or an annotion matrix with rsIDs as rownames.
+}
+  \item{u.span}{
+Upstream span for each transcript from transcript start. Default value is 250 kb.
+}
+  \item{d.span}{
+Downstream span from transcript end. Default value is 100 kb.
+} 
+}
+
+\details{
+Creation of  equivalence class is two step process. First step is to obtain the mapping information then use the mapping information to create equivalence class. If pathwaylist is a list of vectors of GENE names then mapping information is obtained by mapping Input SNPs to user-specified pathways. If pathwaylist is an annotation matrix then each annotation column is treated as an unique pathway and input SNPs are matched to the SNPs of that annotation column.Thus mapping information obtained for annotationn matrix.Based on this mapping information, Input SNPs which are mapped into a same set of pathways form an equivalence class say i^{th} and all the SNPs of i^{th} equivalence class numbered as i.
+
+The list of binary matrix (eq.mat) is formed from this equivalence class. i^{th} row of this matrix indicates which pathways form i^{th} equivalence class. For a newly created object this list is of length one and for a merged object,list is the same length of no of input objects.
+ 
+If several objects merged as a single object then all equivalence classes of input objects are merged to form a new equivalence class. 'eq.map' matrix stores this mapping information i.e which input equivalence classes form the new equivalence classes. For a merged object,'snp.eq' is created by using this new equivalence class. 
+
+}
+
+\value{
+It returns an object of mapob-class.This mapob-class object has following items.
+ \item{snp.df}{A data.frame with input rsIDs as rownames and both choromosome no and base pair position as collumns.}
+ \item{snp.eq}{This is a numeric vector indicating which snp mapped to which pathway equivalence class.}
+ \item{eq.mat}{A list of binary matrix or matrices.Dimension of i^{th} matrix is length of snp.eq by length of pathlist or no of annotations of i^{th} object } 
+ \item{eq.map}{Either NULL  or R Matrix. It is NULL for a single mapob-class object. If more than one mapob-class objects merged as a single object then this field holds a map matrix. No.of column of map matrix is the no. of objects to merge and the no.of rows is the total no of new equivalence classes.} 
+ \item{dim}{A R list of length three.First element is a numeric vector of dimensions of various elments of mapping Object. Other two elements are either NULL(for single object) or two numeric vectors of length equals to the no of objects used for merged.}
+
+}
+
+\seealso{
+\code{\link{mapob}},\code{\link{ob.merge}}
+}
+
+\examples{
+
+snpfile <- system.file("sampleData", "snpData.rda", package="mypkg")
+pathfile <- system.file("sampleData", "pathData.rda", package="mypkg")
+load(snpfile) ## loads snpdf
+load(pathfile) ## loads pathlist
+load("~/Datasets/Encode/anno.snp.list.Rdata")
+#system(paste("gcc ~/getrow.c"))
+
+mpob1<-create.mapob(rownames(snpdf),pathlist) ## R list of gene symbols as pathlist
+anm<-create.anno.mat(rownames(snpdf)) ## creation of annotation matrix
+mpob2<-create.mapob(rownames(snpdf),anm[[1]]) ## annotation matrix as pathlist
+
+}
+

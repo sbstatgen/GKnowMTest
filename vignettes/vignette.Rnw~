@@ -1,0 +1,156 @@
+%\VignetteIndexEntry{GKnowMTest Vignette}
+%\VignettePackage{GKnowMTest}
+%\VigetteDepends{GKnowMTest}
+
+\documentclass[a4paper]{article}
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{\textbf{GKnowMTest Package}}
+\maketitle
+
+\section*{\textit{Introduction}}
+GKnowMTest is a tool to integrate knowledge into SNP-level p-values (e.g. from a GWAS).Currently the package provides two functions.One is \textbf{anno.create} and other is a statistical function \textbf{prior.adjust}.First function creates a Mapping Object of class \textbf{annotatedSNPset}.It supports two kinds of priors on SNPs, namely SNP-level functional annotations (e.g. from ENCODE) and gene-level annotations (e.g. pathways).SNP-level functional annotations can also be obtained using another function \textbf{create.anno.mat}. A mapping object needs to be first created using the \textbf{anno.create} or \textbf{anno.merge} functions before running the statistical routine.
+
+The statistical function \textbf{prior.adjust} integrates prior knowledge into SNP-level p-values (e.g. from a GWAS).The adjusted p-values of the SNPs are calculated based on the prior probability of being associated to the disease. The prior association probabilies are calculated either by Method of Moments or by Regression, as specified by the user. It is incorporated as SNP groups such as functional annotations or pathway information as obtained from the mapping object. The adjusted p-values can be calculated by quantile adjustment or by simple or optimal weighting methods, as specified by the user. 
+
+<<start>>=
+library(GKnowMTest)
+@
+
+\section*{\textit{How to use GKnowMtest}}
+
+\subsection*{Creation of Mapping Object}
+First step is to create an object of 'annotatedSNPset' class which is reffered as a Mapping Object. A mapping object is created by using 'anno.create' function. 'anno.create' takes rsIDs and pathwaylist/annotation data as input. 
+
+<<data file>>=
+snpfile <- system.file("sampleData", "snpData.rda", package="GKnowMTest")
+pathfile <- system.file("sampleData", "pathData.rda", package="GKnowMTest")
+anmfile <- system.file("sampleData", "anmData.rda", package="GKnowMTest")
+@
+
+Loads the input SNP data.frame,pathwaylist and annotation data from the rda files. SNP data.frame ('snpdf') contains SNPs with their Beta, SE and Z-score values. Pathway list ('pathlist') contains a list of 6 pathways where each pathway is a vector of gene-symbols.Annotation data is binary matrix of SNP-level annotation(DHS from ENCODE). 
+
+<<load data>>=
+
+### snp dataframe ###
+load(snpfile)  
+snp<-rownames(snpdf)
+head(snp)
+
+load(pathfile) ## loads a R list of gene symbols
+#### First Pathway#### 
+pathlist[[1]][1:20]
+
+### Last Pathway ###
+pathlist[[6]][100:120]
+
+
+#### Annotation Data ####
+load(anmfile) 
+anm[1:8,1:10]
+
+
+#### Creation of Mapping Object using Pathway list #####
+
+ob1=anno.create(snp,path.def=pathlist)
+@
+
+<<load data2,echo=TRUE,results=hide >>=
+#### Creation of Mapping Object using Annotation data #####
+#ob2<-anno.create(snp,anno.mat=anm)
+
+@
+\subsection*{Overview of annotatedSNPset Object}
+
+Both ob1 and ob2 are objects of 'annotatedSNPset' class having four slots which are 'snp.df','snp.eq','eq.mat' and 'dim'. There are four acessor methods which are 'getDF','getEQ','getMAT' and 'getDIM' to acess these slots respectively.  
+
+<< Overview of annotatedSNPset object  >>=
+
+#### Slots of Mapping Object  ######
+ob1
+
+### Acessor methods ###
+
+### equivalence class of ob1 ####
+eq=getEQ(ob1)
+eq[1:20]
+
+### equivalence class matrix of ob1 ###
+
+mat=getMAT(ob1)
+mat[1:10,1:6]
+
+### Dimension of ob1 ###
+getDIM(ob1)
+@
+
+\subsection*{Creation of Annotation Matrix}
+
+Package provides function 'create.anno.mat' to create annotation data which can be used as input of 'anno.create'. Here we have used DHS(from ENCODE) as SNP level annotation. User can use his/her own Annotation data. DHS(from ENCODE) can be downloaded via  
+'https://github.com/joepickrell/fgwas/'
+
+<< Creation of annotation matrix,echo=TRUE,results=hide >>=
+
+#res=create.anno.mat(rownames(snpdf),base.path="/home/soumen/Datasets/Encode/",
+ #     fl.suffix=".annot.wdist.wcoding")
+ # anm=res[[1]] #anm is the annotation matrix
+
+anm[1:8,1:10]
+@  
+
+\subsection*{Operations on Mapping Objects}
+
+\subsubsection*{Merging of Mapping Objects}
+Multiple 'annotatedSNPset'-class objects can be merged as a single object of 'annotatedSNPset-class' by using the function 'anno.merge'
+
+<< Merging of Mapping Objects  >>=
+
+obfile <- system.file("sampleData", "obData.rda", package="GKnowMTest")
+load(obfile) ##loads two mapping objects ob1 and ob2.
+ob3=anno.merge(list(ob1,ob2))  
+
+## Dimension of ob1 ##
+getDIM(ob1)
+
+## Dimension of ob2 ##
+getDIM(ob2)
+
+## Dimension of ob3 ##
+getDIM(ob3)
+@  
+
+\subsubsection*{Omit SNPs from an Mapping object}
+Package provides function 'omit' to removes input SNPs from an mapping object and returns a new object.
+
+<< omit function >>=
+## Dimension of ob1 before Omit ##
+getDIM(ob1)
+
+ob4<-omit(ob1,5:10)
+
+## Dimension of ob1 after Omit ##
+getDIM(ob4)
+@
+
+\subsection*{Use of statistical function}
+
+Once mapping object is created, the statistical function 'prior.adjust' is used to integrate knowledge into SNP-level p-values.
+<< statistical function  >>=
+
+snpfile <- system.file("sampleData", "snpData.rda", package="GKnowMTest")
+obfile <- system.file("sampleData", "obData.rda", package="GKnowMTest")
+
+load(snpfile) ## loads snp
+load(obfile) ## loads mapping object
+
+res.opt <- prior.adjust(snpdf,map.obj=ob1,prior.meth="Reg",adj.meth="opt.wt")
+head(res.opt)
+@
+
+
+\end{document}
+
+

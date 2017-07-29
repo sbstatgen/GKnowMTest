@@ -1,0 +1,49 @@
+\name{ob.merge}
+\alias{ob.merge}
+
+\title{ Merges multiple mapob-class objects
+}
+
+\description{
+Function to merge multiple mapob-class object into a single object
+}
+\usage{
+ob.merge(oblist)
+}
+
+\arguments{
+  \item{oblist}{
+ A list of multiple mapob-class object 
+}
+
+}
+
+\details{
+When more than one objects merge into a single object,all equivalence classes of input objects are merged and a new equivalence class is formed. This new equivalence class is used to create 'eq.map' matrix and 'snp.eq' vector. 'eq.map' stores equivalence class mapping information i.e which input equivalence classes form new equivalence classes. "eq.mat" field of merged object is the list of all "eq.mat" of input objects.
+}
+
+\value{
+It returns an object of mapob-class.See mapob class for details
+}
+
+\seealso{
+\code{\link{mapob}},\code{\link{create.mapob}}
+}
+
+\examples{
+snpfile <- system.file("sampleData", "snpData.rda", package="mypkg")
+pathfile <- system.file("sampleData", "pathData.rda", package="mypkg")
+load(snpfile) ## loads snpdf
+load(pathfile) ## loads pathlist
+load("~/Datasets/Encode/anno.snp.list.Rdata")
+#system(paste("gcc ~/getrow.c"))
+
+mpob1<-create.mapob(rownames(snpdf),pathlist) ## R list of gene symbols as pathlist
+
+anm<-create.anno.mat(rownames(snpdf)) ## creation of annotation matrix
+mpob2<-create.mapob(rownames(snpdf),anm[[1]]) ## annotation matrix as pathlist
+
+mpob3=ob.merge(list(mpob1,mpob2))
+
+}
+

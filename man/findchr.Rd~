@@ -1,0 +1,33 @@
+\name{findchr}
+
+\title{
+Function to obtain chromosome no and base pair position for a set of SNPs 
+}
+\description{
+This method generates a data.frame of chromosome no and base pair postion for a given a set od SNPs
+}
+\usage{
+findchr(ipsnp)
+}
+
+\arguments{
+  \item{ipsnp}{
+A character vector of rsids.
+}
+}
+
+\value{
+ A data.frame of chromosome no and base-pair postion. This data.frame can be used as the argument of create.anno.mat()
+}
+
+
+\examples{
+  
+  snpfile <- system.file("sampleData", "snpData.rda", package="mypkg")
+  load(snpfile) ## loads snpdf
+  
+  ip.anm<-findchr(rownames(snpdf)) ## creating input for create.anno.mat
+  #anm<-create.anno.mat(ip.anm) ## creation of annotation matrix
+  
+}
+

@@ -1,0 +1,34 @@
+library("S4Vectors")
+
+if(!exists("all_rsids") & !exists("snploc") & !exists("snprle"))
+{
+  load("~/sp2/work/proj_snpmap/allsnpinfo.Rdata")
+  load("~/sp2/work/proj_snpmap/all_rsids.rda")
+}
+
+findchr<-function(ipsnp)
+{
+ 
+  snpname<-as.integer(substring(ipsnp,3))
+  temp<-match(snpname,all_rsids)
+  mis.pos<-which(is.na(temp))
+  orig.pos <- 1:length(ipsnp)
+
+  if(length(mis.pos)>0) 
+  {  
+    pos.snp<-temp[-mis.pos] 
+    orig.pos<-orig.pos[-mis.pos]
+
+  }else
+  {
+    pos.snp=temp
+  }
+
+  newrle<-snprle[pos.snp]
+
+  chrno<-rep(NA,length(ipsnp))
+  chrno[orig.pos]<-as.numeric(sub("chr","",rep(runValue(newrle),runLength(newrle))))
+
+  df<-data.frame(chrno=chrno,rsid=ipsnp,stringsAsFactors=FALSE)
+  return(df)
+}

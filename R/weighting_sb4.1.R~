@@ -1,0 +1,337 @@
+
+
+ins <- function(a, pos=c()) {
+	len <- length(pos)
+	for(i in 1:len) {
+		nw.a <- c(a[seq(pos[i] - 1)], 1, a[seq(pos[i],length(a))])
+		a <- nw.a
+	}
+	a
+}
+
+RW.prior <- function(z.sc, map.obj, type="mu")
+{
+	agg <- aggregate(z.sc,by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); mean(x[ss])})
+	z.mn <- agg[,2]
+	agg <- aggregate(z.sc,by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); var(x[ss])})
+	s2 <- agg[,2]
+	agg <- aggregate(z.sc, by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); sum(ss)})
+	nn <- agg[,2]
+	pi.p <- pmin(pmax(0, ((z.mn^2)/(s2 + z.mn^2 - 1))), 1)
+	mu.p <- ifelse(pi.p < (1/nn), 0 , pmax(0,z.mn) / pi.p)
+	list(pp=pi.p, nn=nn, mm=mu.p,omit=NULL)
+
+}
+
+
+get.design <- function(map.obj, constant=TRUE)
+{
+	n.maps <- (map.obj@dim)$ob_dim["used_ob"]
+	C <- (map.obj@dim)$ob_dim["no_eq_class"]
+	n.anno <- (map.obj@dim)$ob_dim["no_anno"]
+
+	if(n.maps > 1) {
+		x.mat0 <- map.obj@eq.map
+		x.mat <- matrix(0,C,n.anno)
+		for(i in 1:C)
+		{
+			x.mat[i,] <- c(map.obj@eq.mat[[1]][x.mat0[i,1],], map.obj@eq.mat[[2]][x.mat0[i,2],])
+		}
+			
+	} else {
+		x.mat <- map.obj@eq.mat[[1]]
+	}
+	
+	x.mat
+}
+
+reg.prior <- function(map.obj, postr, alpha=0, lambda= NULL, shrink=0)
+{
+	n.maps <- (map.obj@dim)$ob_dim["used_ob"]
+	C <- (map.obj@dim)$ob_dim["no_eq_class"]
+	
+	agg <- aggregate(postr, by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); mean(x[ss])})
+	yy <- agg[, 2]
+	agg <- aggregate(postr, by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); sum(ss)})
+	nn <- agg[, 2]
+	#yy <- postr
+	pp <- rep(NA, C)
+	X.mat <- get.design(map.obj, constant=TRUE)
+	omit <- (!is.finite(yy))
+	nn[omit] <- NA
+	use.cv <- FALSE
+	if(!use.cv)
+	{
+		res <- glmnet(x=X.mat[!omit, ], y=cbind(1 - yy[!omit], yy[!omit]), weights=nn[!omit], offset=NULL, lambda=NULL, alpha=alpha, family="binomial")
+		if(shrink == 1) pp <- predict(res, s=max(res$lambda), type="response", newx=X.mat)
+		else pp[!omit] <- predict(res, s=0, type="response", newx=X.mat[!omit,])
+	} else 
+	{
+		stop("CV glmnet takes too long")
+		res <- cv.glmnet(x=X.mat[!omit, ], y=cbind(1 - yy[!omit], yy[!omit]), offset=NULL, lambda=lambda, alpha=alpha, family="binomial")
+		pp.opt <- predict(res, s="lambda.min", type="response", newx=X.mat)
+	}
+	#pp <- pp[!is.na(pp)]
+	#nn <- nn[!is.na(nn)]
+	omit.pos <- which(omit==TRUE)
+	list(pp=pp, nn=nn, omit=omit.pos)
+}
+
+
+power.func1  <- function(c.vec, pp.vec, nn.vec, F1)
+{
+	pow <- sum(nn.vec * pp.vec * F1(c.vec, lower.tail=FALSE),na.rm=T)
+	pow
+}
+
+opt.pwr <- function(c.vec, pp.vec, nn.vec, F1)
+{
+	
+	level <- 0.05
+	len <- length(c.vec)
+	den.w <- 1
+	e.beta <- beta <- numeric(len-1)
+	for(i in 1: (len-1)) {
+		den <- c.vec[1]
+		beta[i] <- log(c.vec[i+1]/den)
+		e.beta[i] <- exp(beta[i])
+		den.w <- sum(den.w, e.beta[i])
+	}
+	w.vec <- c(1,e.beta)
+	w.vec1 <- w.vec/den.w
+	c.vec1 <- qnorm((w.vec1 * level)/len, lower.tail=F)
+	print(nn.vec)
+	print(pp.vec)
+	power.func1(c.vec1, pp.vec, nn.vec, F1)
+
+}
+
+sim.wts <- function(prior)
+{
+	nn <- prior$nn
+	pp <- prior$pp
+	omit <- prior$omit
+	if(length(omit) > 0) {
+		pp <- pp[-omit]
+		nn <- nn[-omit]
+	}
+	M <- sum(nn, na.rm=T)
+	pp1 <- (1 - pp)
+	wts <- (pp1 / sum(pp1,na.rm=T)) * M
+	wts1 <- wts / nn
+	#print(mean(wts1))
+	wts1
+	 	
+}
+
+quant.adj <- function(z.sc, prior, snp.eq) {
+	M <- length(z.sc)
+	pp <- prior$pp
+	nn <- prior$nn
+	F1 <- prior$F1
+	
+	pi1g <- sum((pp * nn), na.rm=T) / sum(nn, na.rm=T)
+	pi0g <- 1 - pi1g
+
+	grid <- 1000000
+	xx0 <- setdiff(seq(from=-1, to=1, length.out=grid),0)
+	x.inf0 <- ((1/xx0) - sign(xx0))
+	ord <- order(x.inf0)
+	xx <- xx0[ord]
+	x.inf <- x.inf0[ord]
+	F1.t <- F1(x.inf, lower.tail=F)
+	phi.t <- pnorm(x.inf, lower.tail=F)
+	
+	
+
+	opt.h <- function(x, s.pi1, Hg.s) {
+		x1 <- ((1/x) - sign(x))
+		hj <- s.pi1 * F1(x1, lower.tail=F) + (1 - s.pi1) * pnorm(x1, lower.tail=F)
+		opth <- abs(hj - Hg.s)
+		opth
+	}
+	
+
+	Hg <- Hj.inv <- numeric(M)
+	for(i in 1:M) {
+		if(is.na(z.sc[i])) { Hj.inv[i] <- NA; next }
+		F1.z <- F1(z.sc[i], lower.tail=F)
+		phi.z <- pnorm(z.sc[i], lower.tail=F)
+		Hg[i] <-  pi1g * F1.z + pi0g * phi.z
+		if(Hg[i]==0) {Hg.inv[i] <- -Inf; next}
+		if(Hg[i]==1) {Hg.inv[i] <- Inf; next}
+		snp.pi1 <- pp[snp.eq[names(z.sc)[i]]]
+		if(is.na(snp.pi1)) { Hj.inv[i] <- NA; next }
+		Hj1 <- snp.pi1 * F1.t + (1 - snp.pi1) * phi.t
+		pos.les <- Hj1 < Hg[i]
+		pos.end <- which(pos.les==T)[1]
+		pos.str <- pos.end - 1
+		int.str <- xx[pos.str]
+		int.end <- xx[pos.end]
+		end <- 0
+		if(all(!pos.les)) { int.str <- xx[grid]; int.end <- end }
+		if(all(pos.les)) { int.str <- -end; int.end <- xx[1] }
+		Hj.inv0 <- try(optimize(opt.h, interval=c(int.str, int.end), s.pi1=snp.pi1
+					, Hg.s=Hg[i]), silent=TRUE)
+		if(inherits(Hj.inv0, "try-error")) { warning(paste("SNP:", names(z.sc)[i], Hj.inv0))
+					; Hj.inv[i] <- NA }
+		else { Hj.inv[i] <- ((1/Hj.inv0$min) - sign(Hj.inv0$min)) }
+		print(i)
+	}
+	
+	pcurl <- pnorm(Hj.inv, lower.tail=FALSE)
+	zp.curl <- data.frame(Hj.inv, pcurl)
+	zp.curl
+}
+		
+opt.wts <- function(prior, level=0.05)
+{
+	nn <- prior$nn
+	mm <- prior$mm
+	pp <- prior$pp
+	omit <- prior$omit
+	if(length(omit) > 0) {
+		pp <- pp[!is.na(pp)]
+		nn <- nn[!is.na(pp)]
+		mm <- mm[!is.na(pp)]
+	}
+	M <- sum(nn, na.rm=T)
+	F1 <- prior$F1
+	#print(111)
+	get.lam1 <- function(lam1, mm, pp, nn, level)
+	{
+		lam <- (1/lam1) - 1
+		crit <- (((mm^2) / 2) - log(pp/lam)) / (mm)
+		pwr.c <- power.func1(crit, pp, nn, F1)
+		type1 <- sum(nn * pnorm(crit, lower.tail=F))
+		lamd <- abs(type1 - level)
+		return(lamd)
+	}
+
+	lam1.opt <- try(optimize(get.lam1, interval=c(0,1),level=level, mm = mm, pp = pp, nn = nn),silent=TRUE)
+	lam <- (1/lam1.opt$min) - 1
+	if(inherits(lam1.opt, "try-error")) {
+		grid <- 1000000
+		lam1 <- seq(length.out=grid,0,1)
+		lam.inf <- (1/lam1) - 1
+		lam.alpha <- numeric(grid)
+		lamd <- numeric(grid)
+		for(i in 1:grid) {
+			crit <- (((prior$mm^2) / 2) - log(prior$pp/lam.inf[i])) / (prior$mm)
+			lam.alpha[i] <- sum(prior$nn * pnorm(crit, lower.tail=F))
+			lamd[i] <- (if(lam.alpha[i] < level) 1 else 0) * (lam.alpha[i])	
+		}
+		lam <- lam.inf[which.max(lamd)]
+	}
+
+	
+	c.opt <- (((mm^2) / 2) - log(pp/lam)) / (mm)
+	pow <- power.func1(c.opt, pp, nn, F1)
+	print(pow)
+	wt.opt <- (M / level) * pnorm(c.opt, lower.tail=F)
+	wt.opt
+}
+
+prior.adjust <- function(data.df, map.obj, prior.meth=c("MoM","Reg"), adj.meth=c("quantile","opt.wt","simple.wt")
+		, control.prior=list(alpha=0,  lambda=NULL, fit="locfdr"), control.adj=list(level=0.05)
+		, verbose=TRUE, control.locfdr=list(plot=FALSE)) {
+	# getting the data #	
+	if("zscore" %in% names(data.df)) {
+		zz <- data.df$zscore 
+		pv <- 2 * pnorm(abs(zz), lower.tail=FALSE)
+		zz1 <- qnorm(pv, lower.tail=FALSE)
+	} else if("pvalue" %in% names(data.df)) {
+		pv <- data.df$pvalue
+		zz1 <- qnorm(pv, lower.tail=FALSE)
+	} else { 
+		zz <- data.df[, "Beta"]/data.df[, "SD"]
+		pv <- 2 * pnorm(abs(zz), lower.tail=FALSE)
+		zz1 <- qnorm(pv, lower.tail=FALSE)
+	}
+	ptm0 <- proc.time()
+
+	# model fitting #
+	if(verbose) print("Fitting the global model ...")
+	if(control.prior$fit=="locfdr") {
+		pr.del1 <- rep(NA, length(zz1))
+		fsub <- is.finite(zz1)
+		zz2 <- zz1[fsub]
+		lres <- try(locfdr(zz2, nulltype=0, plot=control.locfdr$plot), silent=TRUE)
+		if(inherits(lres, "try-error"))
+		{
+			print("Error in locfdr. Retry with different parameters using control.locfdr or try with fit='mixnorm'")
+			stop(lres)
+		}
+
+		cdf1.tmp <- approxfun(x=lres$cdf1[, 2], y=lres$cdf1[, 1], rule=2)
+		cdf1 <- function(x, lower.tail=TRUE) { if(lower.tail) cdf1.tmp(x) else (1 - cdf1.tmp(x))}
+		pr.del1[fsub] <- (1 - lres$fdr)
+		
+	} else if(control.prior$fit=="mixnorm") {
+		out <- try(normalmixEM(zz1, mean.constr=c(0, NA), sd.constr=c(1, NA)), silent=TRUE)
+		if(inherits(out, "try-error"))
+		{
+			print("Error in normalmixEM. Retry with different parameters using control. locfdr or try with fit='mixnorm'")
+			stop(out)
+		}
+		mu.g <- out$mu[2]
+		sig.g <- min(1, out$sigma[2])
+		pi.1 <- out$lambda[2]
+		pi.0 <- (1 - pi.1)
+		cdf1 <- function(x, ...) { pnorm(x,  mean=mu.g, sd=sig.g, ...) }
+		pr.del1 <- 1/(1 +  exp(log(pi.0) - log(pi.1) + dnorm(zz, log=TRUE) - dnorm(zz, mean=mu.g, sd=sig.g, log=TRUE)))
+	} else {
+		stop("fit method should be either 'locfdr' or 'mixnorm'")
+	}
+	prior <- list(F1=cdf1)
+	
+	# obtaining prior #
+	if(verbose) print("Obtaining Prior ...")
+	if(prior.meth=="MoM") {
+		res <- RW.prior(z.sc=zz1, map.obj)
+		prior$mm <- res$mm
+	} else if(prior.meth=="Reg") {
+		res <- reg.prior(map.obj,  postr=pr.del1, alpha=control.prior$alpha, lambda=control.prior$lambda)
+		z.mn <- aggregate(zz1,by=list(map.obj@snp.eq), FUN=function(x) { ss <- is.finite(x); mean(x[ss], na.rm=T)})
+		mu.p <- z.mn$x / res$pp
+		pr.g <- mean(pr.del1, na.rm=T)
+		mu.g <- mean(is.finite(zz1),na.rm=T) / pr.g
+		prior$mm <- mu.p
+	} else {
+		stop("prior method should be either 'method of moments(MoM)' or 'Regression(Reg)'")
+	}
+	prior <- c(prior, list(pp=res$pp), list(nn=res$nn), list(omit=res$omit))
+
+	# getting adjusted weights #
+	if(adj.meth=="inverse") {
+		names(map.obj@snp.eq) <- names(zz1)
+		Padj <- quant.adj(z.sc=zz1, prior=prior, snp.eq=map.obj@snp.eq)
+		M <- nrow(map.obj@snp.df)
+		summary.mat <- matrix(NA, M, 4)
+		rownames(summary.mat) <- rownames(map.obj@snp.df)
+		colnames(summary.mat) <- c("Z", "P", "Z.adj", "P.adj")
+		summary.mat[, "Z"] <- zz1
+		summary.mat[, "P"] <- pv
+		summary.mat[, "Z.adj"] <- Padj[,1]
+		summary.mat[, "P.adj"] <- Padj[,2]
+	} else {
+		if(adj.meth=="opt.wt") { wts <- opt.wts(prior, level=control.adj$level) }
+		if(adj.meth=="simple.wt") { wts <- sim.wts(prior) }
+		if(length(res$omit) > 0) {
+			wts <- ins(wts, pos=res$omit)
+		}
+		ptm1 <- proc.time()	
+		if(verbose) { print("Completed weighted analysis"); print(ptm1 - ptm0) }
+		M <- nrow(map.obj@snp.df)
+		summary.mat <- matrix(NA, M, 4)
+		rownames(summary.mat) <- rownames(map.obj@snp.df)
+		colnames(summary.mat) <- c("Z", "P", "wP", "adjP")
+		summary.mat[, "Z"] <- zz1
+		summary.mat[, "P"] <- pv
+		summary.mat[, "wP"] <- pmin(summary.mat[, "P"] / wts[map.obj@snp.eq], 1)
+		summary.mat[, "adjP"] <- pmin(M * summary.mat[, "P"] / wts[map.obj@snp.eq], 1)
+	}
+	res.df <- cbind(map.obj@snp.df,  summary.mat)
+	res.df
+}
+

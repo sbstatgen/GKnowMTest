@@ -1,0 +1,27 @@
+\name{getDIM-methods}
+\docType{methods}
+\alias{getDIM-methods}
+\alias{getDIM,annotatedSNPset-method}
+\title{\code{getDIM}}
+\description{
+ To extract \code{dim} slot of \code{\link{annotatedSNPset-class}}object.
+}
+\section{Methods}{
+\describe{
+
+\item{\code{signature(x = "annotatedSNPset")}}{
+getDIM(x). x must be an object of \code{\link{annotatedSNPset-class}}
+}
+}}
+
+\examples{
+  snpfile <- system.file("sampleData", "snpData.rda", package="mypkg2")
+  pathfile <- system.file("sampleData", "pathData.rda", package="mypkg2")
+  load(snpfile) ## loads snpdf
+  load(pathfile) ## loads pathlist
+  mpob<-create.mapob(rownames(snpdf),pathlist) ## R list of gene symbols as pathlist
+  res=getDIM(mpob)
+  res
+}
+\keyword{methods}
+

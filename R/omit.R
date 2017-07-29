@@ -1,0 +1,84 @@
+
+fn.hash<-function(tt)
+{
+  u1<-unique(tt)
+  hash<-rank(u1)
+  names(hash)<-u1
+  tt2<-unname(hash[as.character(tt)])
+  
+  return(tt2) 
+}
+
+
+omit<-function(ob,val)
+{
+  if(is.character(val))
+  {
+    rn<-rownames(ob@snp.df)
+    miss<-as.numeric(match(val,rn))
+
+  }else
+  {
+    miss<-val
+  }
+
+  if(length(miss))
+  {
+    eq.nw=ob@snp.eq[-miss]
+    u1<-unique(eq.nw)
+    cls<-setdiff(unique(ob@snp.eq),u1)
+
+    if(length(cls)) ## change found in equivalence class
+    {
+      ob@snp.eq<-fn.hash(eq.nw)
+
+      if(is.null(ob@eq.map)) ## for non-merged object
+      {  
+        nw.mat<-ob@eq.mat[[1]]
+        nw.mat<-nw.mat[-cls,]
+        ob@eq.mat[[1]]<-nw.mat
+        
+      }else 
+      {
+        emap=ob@eq.map
+        emap2=emap[-cls,]
+        dm<-numeric(0)
+
+        for(k in 1:ncol(emap))
+        {
+          cid<-setdiff(unique(emap[,k]),unique(emap2[,k]))
+          if(length(cid))
+          { 
+            nw.mat<-ob@eq.mat[[k]]
+            nw.mat<-nw.mat[-cid,]
+            ob@eq.mat[[k]]<-nw.mat
+            emap2[,k]<-fn.hash(emap2[,k])
+          }
+          dm<-c(dm,nrow(ob@eq.mat[[k]]))
+         
+        }
+       
+        ob@eq.map<-emap2
+        ob@dim[[2]]<-dm
+      } 
+
+    }else
+    {
+      ob@snp.eq<-eq.nw
+    }
+    
+    ob@snp.df<-ob@snp.df[-miss,]
+    ob@dim[[1]][1]<-nrow(ob@snp.df)
+    ob@dim[[1]][2]<-max(ob@snp.eq)
+     
+  }else
+  {
+    print("No Missing Position")
+  }
+
+  return(ob)
+
+}
+
+   
+    

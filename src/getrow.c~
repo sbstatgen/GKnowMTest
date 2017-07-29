@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <R_ext/Rdynload.h>
+
+void findrow(char **pth_anf,int *indx,int *size,int *anm)
+{
+  FILE *fp;
+  int count1,k,j=0,val,ret,cc;
+  char ch;
+  
+  fp = fopen(*pth_anf,"r"); 
+ 
+  if (fp == NULL)
+  {  printf("cant open the annotation file");
+     //exit(1);
+  }
+
+  if(size[3])
+  {
+    ret=fscanf(fp, "%*[^\n]%*[\n]"); //reading the header line
+  }
+
+  count1=1; //next line no. to be read
+  
+  while(j<size[0])
+  {
+    if(count1==indx[j])
+    {
+      for(cc=1;cc<size[2];cc++)  // size[2] is annotation start collumn
+      {      
+        ret=fscanf(fp,"%*s");
+      } 
+
+      for(k=0;k<size[1];k++)
+       {
+        ret=fscanf(fp, "%d", &val);
+        anm[j*size[1] + k]=val;
+       }
+ 
+      ch = fgetc(fp); //getting newline character
+      j++;
+     
+     }else
+     {
+      ret=fscanf(fp, "%*[^\n]%*[\n]");   
+      
+     }
+
+    count1++;
+  }
+  
+  fclose(fp);
+   
+}
+
+
+R_CMethodDef cMethods[] = {{"getrow",(DL_FUNC) &findrow,4},NULL};
+
+void R_init_GKnowMTest(DllInfo *info)
+{
+/* Register the .C and .Call routines.
+No .Fortran() or .External() routines,
+so pass those arrays as NULL.
+*/
+R_registerRoutines(info,cMethods,NULL, NULL, NULL);
+}
+      
+      
+    

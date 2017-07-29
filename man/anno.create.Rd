@@ -1,0 +1,79 @@
+\name{anno.create}
+\alias{anno.create}
+
+\title{Function to create a mapping object
+}
+
+\description{
+This Function creates an annotatedSNPset object by mapping input SNPs to the appropriate input pathways or SNP annotation matrix. 
+}
+
+\usage{
+anno.create(snp.ids, anno.mat=NULL, path.def=NULL, u.span=250,d.span=100)
+}
+
+\arguments{
+  \item{snp.ids}{
+A character vector of SNP rsIDs (i.e. names of SNPs for which summary data  e.g. odds ratios and p-values of association have been calculated).
+}
+  \item{anno.mat}{
+A matrix having the SNPs listed in \code{snp.ids} in the rows and annotation features (e.g. ENCODE functional categories) in the columns. The entries in a column may be 1/0 (denoting whether a SNP has or lacks that feature respectively), or -1 to denote missing. Note that currently columns with other numeric values are removed. Only one of the two arguments, either \code{anno.mat} or \code{path.def} is allowed to be non-null. To specify both see \code{\link{anno.merge}}.
+}
+  \item{path.def}{
+The pathway definitions.This can either be an R list with gene symbols (HGNC) or a gene-level annotion matrix with gene symbols (HGNC) as rownames and pathways or other gene-level characteristics as columns The entries of the matrix must be 1/0 (denoting whether the gene belongs to that pathway or has that characteristic). Only one of the two arguments, either \code{anno.mat} or \code{path.def} is allowed to be non-null. To specify both see \code{\link{anno.merge}}.
+}
+  \item{u.span}{
+Upstream span for each transcript from transcript start. Default value is 250 kb. This is required for mapping SNPs into genes and is used only if \code{path.def} is non-null.
+}
+  \item{d.span}{
+Downstream span from transcript end. Default value is 100 kb. This is required for mapping SNPs into genes and is used only if \code{path.def} is non-null.
+} 
+}
+
+
+\details{
+An annotatedSNPset object consists of SNP-level equivalence classes. Creation of equivalence classes is two step process. The first step is to map the SNPs into the annotation groups provided as input and then partition the SNPs into groups that map to the same unique set of annotationsi.e. an equivalence class. If  \code{anno.mat} is provided then the first step is trivial.  If {path.def} is provided, pathways (sets of genes) are first mapped to transcripts using the knownGene table of the UCSC hg19 transcript database. Positions of the input SNPs are obtained from the dbSNP build 142 and finally \code{\link{findOverlaps}} function of the \code{\link{GRanges}} package is used to map SNPs back to transcripts, genes and hence pathways.
+
+The binary matrix \code{eq.mat[[1]]} holds the equivalence classes. The \eqn{i^{th}} row of this matrix indicates the annotations to which all SNPs of the \eqn{i^{th}} equivalence class belong. For a newly created object \code{eq.mat} is a list of length one and for a merged object, it is a list  with the same length as number of merged objects. If several objects merged as a single object then all equivalence classes of input objects are merged to form a new equivalence class. \code{eq.map} matrix stores this mapping information i.e which input equivalence classes form the new equivalence classes. For a merged object,\code{snp.eq} is created by using this new equivalence class. The \code{eq.mat} lists are concatenated to hold one binary matrix from each merged object.
+
+}
+
+\value{
+It returns an object of annotatedSNPset-class.This object has following items.
+ \item{snp.df}{A data.frame with input rsIDs as rownames and both chromosome number and base pair position as columns.}
+ \item{snp.eq}{This is a numeric vector indicating which snp mapped to which  equivalence class.}
+ \item{eq.mat}{A list of binary matrix or matrices. Dimension of \eqn{i^{th}} matrix is no.of equivalence class by no.of annotations of \eqn{i^{th}} object.} 
+ \item{eq.map}{Either NULL or an integer matrix. It is NULL for a simple annotatedSNPset object. If more than one annotatedSNPset objects are merged into a composite object then this field holds a map matrix. Number of columns of the map matrix is the number of objects that are merged and the number of rows is the total number of new equivalence classes after merging.} 
+ \item{dim}{An R list of length 3. First element is a numeric vector of dimensions (number of SNPs \code{no_snps}, total number of equivalence classes \code{no_eq_class},total number of annotation \code{no_anno} and total number of merged objects \code{used_ob}. Other two elements are either NULL(for simple object) or numeric vectors of length equal to the number of objects used for merging i.e. \code{used_ob}. These two vectors hold the number of rows and number of columns respectively of the binary matrices in the list \code{eq.mat}.}
+}
+
+\seealso{
+\code{\link{annotatedSNPset-class}},\code{\link{anno.merge}},\code{\link{create.anno.mat}}
+}
+
+\examples{
+
+snpfile <- system.file("sampleData", "snpData.rda", package="GKnowMTest")
+pathfile <- system.file("sampleData", "pathData.rda", package="GKnowMTest")
+anmfile <- system.file("sampleData", "anmData.rda", package="GKnowMTest")
+
+load(snpfile) ## loads snp
+load(pathfile) ## loads a R list of gene symbols
+load(anmfile) ##loads annotation matrix
+
+snp<-rownames(snpdf)
+ob1=anno.create(snp,path.def=pathlist)
+ob1
+
+\dontrun{
+  ## creation of annotation matrix
+  res=create.anno.mat(snp,base.path="/home/Datasets/Encode/",
+      fl.suffix=".annot.wdist.wcoding")
+  anm=res[[1]]
+}
+
+ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
+ob2
+
+}
+
