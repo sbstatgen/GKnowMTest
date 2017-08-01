@@ -1,5 +1,5 @@
 import(GenomicRanges)
-import(BiocGenerics)
+import(BiocGenerics,except = c(var))
 import(TxDb.Hsapiens.UCSC.hg19.knownGene)
 import(methods)
 import(locfdr)

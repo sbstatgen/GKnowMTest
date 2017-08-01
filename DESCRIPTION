@@ -1,12 +1,12 @@
 Package: GKnowMTest
 Type: Package
 Title: Genomic Knowledge-guided Multiple Testing
-Version: 0.99.0
+Version: 0.99.1
 Date: 2016-10-20
 Author: Soumen Pal,Shrayashi Biswas,Samsiddhi Bhattacharjee
 Maintainer: Samsiddhi Bhattacharjee <sb.statgen@gmail.com>
 Description:Tools for integrating prior knowledge into genomic studies.
-Depends: R (>= 3.3.0),GenomicRanges,TxDb.Hsapiens.UCSC.hg19.knownGene,locfdr,glmnet,distr
+Depends: R (>= 3.4.0),GenomicRanges,TxDb.Hsapiens.UCSC.hg19.knownGene,locfdr,glmnet,distr
 Imports: org.Hs.eg.db,GenomeInfoDb,AnnotationDbi,GenomicFeatures,IRanges,
                 S4Vectors,methods,BSgenome,data.table,BiocGenerics,mixtools,
                 utils,msm,splines,SNPlocs.Hsapiens.dbSNP142.GRCh37,stats,graphics
