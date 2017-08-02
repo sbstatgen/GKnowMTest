@@ -1,4 +1,4 @@
-.onAttach <- function(libname = find.package("mypkg2"), pkgname = "mypkg2") {
+.onAttach <- function(libname = find.package("GKnowMTest"), pkgname = "GKnowMTest") {
     
  packageStartupMessage("Loading SNP Base Pair Positions....")
  #print("loadind Data...")

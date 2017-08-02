@@ -58,7 +58,10 @@ create.nwg<-function(ipsnp,pathlist,u.span,d.span)
     ipsnp2<-intersect(ipsnp,rownames(pathlist))
   }  
 
-  locs.ob<- SNPlocs.Hsapiens.dbSNP142.GRCh37
+  if(!exists("locs.ob"))
+  {
+    locs.ob<- SNPlocs.Hsapiens.dbSNP142.GRCh37
+  }
   snp.gpos=snpsById(locs.ob, ipsnp2, ifnotfound="drop")
   df=data.frame(mcols(snp.gpos))
   os<-setdiff(ipsnp,df[,1])

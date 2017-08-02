@@ -53,26 +53,27 @@ It returns an object of annotatedSNPset-class.This object has following items.
 
 \examples{
 
-snpfile <- system.file("sampleData", "snpData.rda", package="GKnowMTest")
-pathfile <- system.file("sampleData", "pathData.rda", package="GKnowMTest")
-anmfile <- system.file("sampleData", "anmData.rda", package="GKnowMTest")
 
-load(snpfile) ## loads snp
-load(pathfile) ## loads a R list of gene symbols
-load(anmfile) ##loads annotation matrix
+ snpfile <- system.file("sampleData", "snpData.rda", package="GKnowMTest")
+ pathfile <- system.file("sampleData", "pathData.rda", package="GKnowMTest")
+ anmfile <- system.file("sampleData", "anmData.rda", package="GKnowMTest")
 
-snp<-rownames(snpdf)
-ob1=anno.create(snp,path.def=pathlist)
-ob1
+ load(snpfile) ## loads snp
+ load(pathfile) ## loads a R list of gene symbols
+ load(anmfile) ##loads annotation matrix
+
+ snp<-rownames(snpdf)
+ ob1=anno.create(snp,path.def=pathlist)
 
 \dontrun{
   ## creation of annotation matrix
-  res=create.anno.mat(snp,base.path="/home/Datasets/Encode/",fl.suffix=".annot.wdist.wcoding")
+  res=create.anno.mat(snp,base.path="/home/Datasets/Encode/",
+      fl.suffix=".annot.wdist.wcoding")
   anm=res[[1]]
-}
 
-ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
-ob2
+ }
+  ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
+
 
 }
 

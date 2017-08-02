@@ -68,7 +68,7 @@ load(snpfile) ## loads snp
 load(obfile) ## loads mapping object
 
 res.opt <- prior.adjust(snpdf,map.obj=ob1,prior.meth="Reg",adj.meth="pair.wt")
-head(res.opt)
+head(res.opt[[1]],15)
 
 }
 

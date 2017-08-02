@@ -46,7 +46,8 @@ It returns an object of annotatedSNPset-class.See \code{\link{annotatedSNPset-cl
   ob1=anno.create(snp,path.def=pathlist) ## Genelist as Pathlist
 
   ##creation of annotation matrix
-  res=create.anno.mat(snp,base.path="/home/Datasets/Encode/",fl.suffix=".annot.wdist.wcoding")
+  res=create.anno.mat(snp,base.path="/home/Datasets/Encode/",
+      fl.suffix=".annot.wdist.wcoding")
   anm=res[[1]]
 
   ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
