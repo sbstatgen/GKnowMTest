@@ -1,7 +1,7 @@
 Package: GKnowMTest
 Type: Package
 Title: Genomic Knowledge-guided Multiple Testing
-Version: 0.99.3
+Version: 0.99.2
 Date: 2017-08-02
 Author: Soumen Pal,Shrayashi Biswas,Samsiddhi Bhattacharjee
 Maintainer: Samsiddhi Bhattacharjee <sb.statgen@gmail.com>

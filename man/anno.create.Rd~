@@ -64,6 +64,7 @@ It returns an object of annotatedSNPset-class.This object has following items.
 
  snp<-rownames(snpdf)
  ob1=anno.create(snp,path.def=pathlist)
+ ob1
 
 \dontrun{
   ## creation of annotation matrix
@@ -72,8 +73,8 @@ It returns an object of annotatedSNPset-class.This object has following items.
   anm=res[[1]]
 
  }
-  ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
-
+ ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
+ ob2
 
 }
 
