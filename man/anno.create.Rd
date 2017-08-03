@@ -72,10 +72,10 @@ It returns an object of annotatedSNPset-class.This object has following items.
       fl.suffix=".annot.wdist.wcoding")
   anm=res[[1]]
 
- }
-
  ob2<-anno.create(snp,anno.mat=anm) #annotation matrix as pathlist
  ob2
+ 
+ }
 
 }
 
